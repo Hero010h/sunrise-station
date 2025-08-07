@@ -37,7 +37,6 @@ public sealed partial class AddWantedStatusSystem : EntitySystem
             return;
 
         _actions.AddAction(uid, ref comp.ActionEntity, comp.Action);
-
     }
 
     private void OnAddWanted(Entity<AddWantedStatusComponent> ent, ref AddWantedEvent args)
@@ -61,7 +60,10 @@ public sealed partial class AddWantedStatusSystem : EntitySystem
             var reason = Loc.GetString("criminal-records-reason-visor");
 
             if (_criminalRecords.TryChangeStatus(recordKey, SecurityStatus.Wanted, reason))
-                SendRadioMessage(ent, reason, performer, recordKey);
+            {
+                SendRadioMessage(ent, reason, performer, record);
+                break;
+            }
         }
     }
 
@@ -87,18 +89,11 @@ public sealed partial class AddWantedStatusSystem : EntitySystem
         return MetaData(identityUid.Value).EntityName;
     }
 
-    private void SendRadioMessage(EntityUid sender, string? reason, EntityUid officerUid, StationRecordKey key)
+    private void SendRadioMessage(EntityUid sender, string? reason, EntityUid officerUid, GeneralStationRecord record)
     {
-        var wantedName = "Unknown";
-        var wantedJobName = "Unknown";
+        var wantedName = record.Name;
+        var wantedJobTitle = record.JobTitle;
         var officer = "Unknown";
-
-        // Wanted name and job name
-        if (_records.TryGetRecord<GeneralStationRecord>(key, out var entry))
-        {
-            wantedName = entry.Name;
-            wantedJobName = entry.JobTitle;
-        }
 
         // Officer
         var getIdEvent = new TryGetIdentityShortInfoEvent(null, officerUid);
@@ -110,7 +105,7 @@ public sealed partial class AddWantedStatusSystem : EntitySystem
         if (string.IsNullOrWhiteSpace(reason))
             reason = "Unknown";
 
-        var locArgs = new (string, object)[] { ("name", wantedName), ("officer", officer), ("reason", reason), ("job", wantedJobName) };
+        var locArgs = new (string, object)[] { ("name", wantedName), ("officer", officer), ("reason", reason), ("job", wantedJobTitle) };
         _radio.SendRadioMessage(sender, Loc.GetString("criminal-records-console-wanted", locArgs), "Security", sender);
     }
 }
