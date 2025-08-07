@@ -1,7 +1,7 @@
 - type: entity
   id: ActionAddWanted
   name: Submit a wanted
-  description: Puts a man on the wanted list.
+  description: Puts the target on the wanted list.
   components:
   - type: Action
     useDelay: 1

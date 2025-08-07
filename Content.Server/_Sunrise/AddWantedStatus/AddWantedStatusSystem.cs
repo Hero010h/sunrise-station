@@ -50,11 +50,11 @@ public sealed partial class AddWantedStatusSystem : EntitySystem
         if (_station.GetOwningStation(performer) is not { } station)
             return;
 
-        var target_name = GetDisplayName(target);
+        var targetName = GetDisplayName(target);
 
         foreach (var (key, record) in _records.GetRecordsOfType<GeneralStationRecord>(station))
         {
-            if (record.Name != target_name)
+            if (record.Name != targetName)
                 continue;
 
             var recordKey = new StationRecordKey(key, station);
@@ -79,12 +79,12 @@ public sealed partial class AddWantedStatusSystem : EntitySystem
         if (!TryComp<IdentityComponent>(ent, out var comp))
             return metaDataName;
 
-        var identity_uid = comp.IdentityEntitySlot.ContainedEntity;
+        var identityUid = comp.IdentityEntitySlot.ContainedEntity;
 
-        if (identity_uid == null)
+        if (identityUid == null)
             return metaDataName;
 
-        return MetaData(identity_uid.Value).EntityName;
+        return MetaData(identityUid.Value).EntityName;
     }
 
     private void SendRadioMessage(EntityUid sender, string? reason, EntityUid officerUid, StationRecordKey key)
@@ -110,7 +110,7 @@ public sealed partial class AddWantedStatusSystem : EntitySystem
         if (string.IsNullOrWhiteSpace(reason))
             reason = "Unknown";
 
-        var loc_args = new (string, object)[] { ("name", wantedName), ("officer", officer), ("reason", reason), ("job", wantedJobName) };
-        _radio.SendRadioMessage(sender, Loc.GetString("criminal-records-console-wanted", loc_args), "Security", sender);
+        var locArgs = new (string, object)[] { ("name", wantedName), ("officer", officer), ("reason", reason), ("job", wantedJobName) };
+        _radio.SendRadioMessage(sender, Loc.GetString("criminal-records-console-wanted", locArgs), "Security", sender);
     }
 }
