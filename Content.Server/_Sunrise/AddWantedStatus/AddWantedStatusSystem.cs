@@ -54,7 +54,7 @@ public sealed partial class AddWantedStatusSystem : EntitySystem
 
         foreach (var (key, record) in _records.GetRecordsOfType<GeneralStationRecord>(station))
         {
-            if (record.Name != targetName)
+            if (!string.Equals(record.Name?.Trim(), targetName?.Trim(), StringComparison.OrdinalIgnoreCase))
                 continue;
 
             var recordKey = new StationRecordKey(key, station);
