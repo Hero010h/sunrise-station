@@ -1,25 +1,28 @@
+using Content.Server.Actions;
 using Content.Server.CriminalRecords.Systems;
 using Content.Server.Radio.EntitySystems;
 using Content.Server.Station.Systems;
 using Content.Server.StationRecords.Systems;
 using Content.Shared._Sunrise.AddWantedStatus;
+using Content.Shared.Access.Systems;
 using Content.Shared.Actions;
+using Content.Shared.Clothing.Components;
 using Content.Shared.Humanoid;
 using Content.Shared.IdentityManagement;
-using Content.Shared.IdentityManagement.Components;
 using Content.Shared.Security;
 using Content.Shared.StationRecords;
-using Content.Shared.Inventory;
 
 namespace Content.Server._Sunrise.AddWantedStatus;
 
 public sealed partial class AddWantedStatusSystem : EntitySystem
 {
-    [Dependency] private readonly SharedActionsSystem _actions = default!;
+    [Dependency] private readonly ActionsSystem _actions = default!;
     [Dependency] private readonly CriminalRecordsSystem _criminalRecords = default!;
     [Dependency] private readonly StationRecordsSystem _records = default!;
     [Dependency] private readonly StationSystem _station = default!;
     [Dependency] private readonly RadioSystem _radio = default!;
+    [Dependency] private readonly EntityManager _entityManager = default!;
+    [Dependency] private readonly AccessReaderSystem _accessReader = default!;
 
     public override void Initialize()
     {
@@ -49,7 +52,7 @@ public sealed partial class AddWantedStatusSystem : EntitySystem
         if (_station.GetOwningStation(performer) is not { } station)
             return;
 
-        var targetName = GetDisplayName(target);
+        var targetName = Identity.Name(target, _entityManager);
 
         foreach (var (key, record) in _records.GetRecordsOfType<GeneralStationRecord>(station))
         {
@@ -69,31 +72,21 @@ public sealed partial class AddWantedStatusSystem : EntitySystem
 
     private void OnGetItemActions(Entity<AddWantedStatusComponent> ent, ref GetItemActionsEvent args)
     {
-        if (args.InHands || args.SlotFlags == SlotFlags.POCKET)
+        if (!TryComp<ClothingComponent>(ent.Owner, out var comp))
+            return;
+
+        if (comp.Slots != args.SlotFlags)
             return;
 
         args.AddAction(ent.Comp.ActionEntity);
     }
 
-    private string GetDisplayName(EntityUid ent)
-    {
-        var metaDataName = MetaData(ent).EntityName;
-        if (!TryComp<IdentityComponent>(ent, out var comp))
-            return metaDataName;
-
-        var identityUid = comp.IdentityEntitySlot.ContainedEntity;
-
-        if (identityUid == null)
-            return metaDataName;
-
-        return MetaData(identityUid.Value).EntityName;
-    }
 
     private void SendRadioMessage(EntityUid sender, string? reason, EntityUid officerUid, GeneralStationRecord record)
     {
         var wantedName = record.Name;
-        var wantedJobTitle = record.JobTitle;
-        var officer = "Unknown";
+        var wantedJobTitle = record.JobTitle ?? Loc.GetString("job-name-unknown");
+        var officer = Loc.GetString("criminal-records-console-unknown-officer");
 
         // Officer
         var getIdEvent = new TryGetIdentityShortInfoEvent(null, officerUid);
@@ -103,9 +96,9 @@ public sealed partial class AddWantedStatusSystem : EntitySystem
 
         // Reason
         if (string.IsNullOrWhiteSpace(reason))
-            reason = "Unknown";
+            reason = Loc.GetString("wanted-list-unknown-reason-label");
 
-        var locArgs = new (string, object)[] { ("name", wantedName), ("officer", officer), ("reason", reason), ("job", wantedJobTitle) };
-        _radio.SendRadioMessage(sender, Loc.GetString("criminal-records-console-wanted", locArgs), "Security", sender);
+        var message = Loc.GetString("criminal-records-console-wanted", [("name", wantedName), ("officer", officer), ("reason", reason), ("job", wantedJobTitle)]);
+        _radio.SendRadioMessage(sender, message, "Security", sender);
     }
 }

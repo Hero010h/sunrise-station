@@ -10,7 +10,7 @@ public sealed partial class AddWantedStatusComponent : Component
     [DataField]
     public EntProtoId<TargetActionComponent> Action = "ActionAddWanted";
 
-    [DataField, AutoNetworkedField]
+    [AutoNetworkedField, ViewVariables]
     public EntityUid? ActionEntity;
 }
 
