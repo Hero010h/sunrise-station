@@ -4,7 +4,6 @@ using Content.Server.Radio.EntitySystems;
 using Content.Server.Station.Systems;
 using Content.Server.StationRecords.Systems;
 using Content.Shared._Sunrise.AddWantedStatus;
-using Content.Shared.Access.Systems;
 using Content.Shared.Actions;
 using Content.Shared.Clothing.Components;
 using Content.Shared.Humanoid;
@@ -21,8 +20,6 @@ public sealed partial class AddWantedStatusSystem : EntitySystem
     [Dependency] private readonly StationRecordsSystem _records = default!;
     [Dependency] private readonly StationSystem _station = default!;
     [Dependency] private readonly RadioSystem _radio = default!;
-    [Dependency] private readonly EntityManager _entityManager = default!;
-    [Dependency] private readonly AccessReaderSystem _accessReader = default!;
 
     public override void Initialize()
     {
@@ -52,7 +49,7 @@ public sealed partial class AddWantedStatusSystem : EntitySystem
         if (_station.GetOwningStation(performer) is not { } station)
             return;
 
-        var targetName = Identity.Name(target, _entityManager);
+        var targetName = Identity.Name(target, EntityManager);
 
         foreach (var (key, record) in _records.GetRecordsOfType<GeneralStationRecord>(station))
         {
